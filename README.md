@@ -6,6 +6,7 @@ The project arose from the final assignment at Deep Learning School (https://en.
 - train any classifier on "CelebA Aligned and Cropped" dataset (https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) using Categorical Cross-Entropy Loss, Triplet Loss and ArcFace Loss (only ImageNet pretrained networks were allowed);
 - calculate cosine similarities distributions on pairs of faces that the net never seen before: different pictures of the same person and different people;
 - calculate identification rate metric (TPR @ FPR).
+
 The "CelebA Aligned and Cropped" consists of 1k classes (total around 24k pictures). Full CelebA "Faces in the Wild" has over 10k classes and 200k images of people (actual celebrities) with bounding boxes around their faces and landmarks placed on 5 points on each face: right eye, left eye, nose, right mouth corner and left mouth corner.
 Example of the pictures with bboxes and landmarks:
 ![image](https://user-images.githubusercontent.com/89016122/184662355-9353ab9c-81d1-431d-b51a-6a35df813fd9.png)
