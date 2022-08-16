@@ -20,3 +20,7 @@ Three artificial neural networks were trained separately for this project:
 - Another ImageNet pretrained Rexnet_200 network from timm was used for landmarks placing, it was transfer trained on CelebA dataset with landmarks.
 
 All the training was performed on free Google Colab platform with GPU acceleration. The Albumentation library (https://albumentations.ai/) was used to augment pictures on-the-fly. The code used for training neural networks, augmenting photos, aligning and cropping faces is presented in this repository. The dataset CelebA is available on their official website https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and is not included in this repository.
+
+The next step is to build a web-application that would demonstrate the pipeline as follows:
+![image](https://user-images.githubusercontent.com/89016122/184847603-f1e2c0cb-f699-411a-b1cf-6da11eabad7a.png)
+An application will be built using Flask-RESTful
