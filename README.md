@@ -11,8 +11,8 @@ The "CelebA Aligned and Cropped" consists of 1k classes (total around 24k pictur
 Example of the pictures with bboxes and landmarks:
 ![image](https://user-images.githubusercontent.com/89016122/184662355-9353ab9c-81d1-431d-b51a-6a35df813fd9.png)
 
-So the original project was expanded to include big CelebA "Faces in the Wild" dataset with bounding boxes and landmarks, with cropping and aligning. 
-Cropped and aligned faces look like this:
+So the original project was expanded to include big CelebA "Faces in the Wild" dataset with bounding boxes and landmarks, with cropping and aligning big original photos. 
+Faces from earler example cropped and aligned using dataset information look like this:
 ![image](https://user-images.githubusercontent.com/89016122/184663974-e4b337fd-667e-4375-84cc-33f45ebcb99c.png)
 
 Three artificial neural networks were trained separately for this project:
