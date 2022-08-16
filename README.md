@@ -15,12 +15,12 @@ Cropped and aligned faces look like this:
 ![image](https://user-images.githubusercontent.com/89016122/184663974-e4b337fd-667e-4375-84cc-33f45ebcb99c.png)
 
 Three artificial neural networks were trained separately for this project:
-- ImageNet pretrained Rexnet_200 neural network from PyTorch Image Models (timm) (https://github.com/rwightman/pytorch-image-models) was used for classification and embedding calculation. The network was transfer trained on the CelebA faces dataset described above using ArcFace Loss.
+- ImageNet pretrained Rexnet_200 neural network from PyTorch Image Models (timm) (https://github.com/rwightman/pytorch-image-models) was used for classification and embedding calculation. The network was transfer trained on the CelebA faces dataset described above using CCE and ArcFace losses.
 - ImageNet pretrained YOLOv5m (https://github.com/ultralytics/yolov5) was used for face detection, also transfer trained on CelebA dataset with bounding boxes.
 - Another ImageNet pretrained Rexnet_200 network from timm was used for landmarks placing, it was transfer trained on CelebA dataset with landmarks.
 
-All the training was performed on free Google Colab platform with GPU acceleration. The Albumentation library (https://albumentations.ai/) was used to augment pictures on-the-fly. The code used for training neural networks, augmenting photos, aligning and cropping faces is presented in this repository. The dataset CelebA is available on their official website https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and is not included in this repository.
+All the training was performed on free Google Colab platform with GPU acceleration. The Albumentation library (https://albumentations.ai/) was used to augment pictures on-the-fly. The code used for training neural networks, augmenting photos, aligning and cropping faces is presented in this repository. The dataset CelebA is available on their official website https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and is not included in this repository. The training process is described in details in /training/README.md
 
-The next step is to build a web-application that would demonstrate the pipeline as follows:
+The next step is to build a web-application that will demonstrate the face recognition pipeline as follows:
 ![image](https://user-images.githubusercontent.com/89016122/184847603-f1e2c0cb-f699-411a-b1cf-6da11eabad7a.png)
 An application will be built using Flask-RESTful
