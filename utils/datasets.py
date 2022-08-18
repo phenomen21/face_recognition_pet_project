@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import random
@@ -11,6 +12,7 @@ from torch.utils.data import Dataset
 from collections import deque
 from image_processing import crop_img_bbox, align_face
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 import albumentations
 import albumentations.augmentations.transforms as A
 
@@ -42,6 +44,7 @@ class MyRandomHorizontalFlip(torch.nn.Module):
         return f"{self.__class__.__name__}(p={self.p})"
 
 
+
 class MyCompose:
     """
     Adapted from the source code for torchvision.transforms.Compose for use with MyRandomHorizontalFlip
@@ -67,6 +70,7 @@ class MyCompose:
             format_string += f"    {t}"
         format_string += "\n)"
         return format_string
+
 
 
 class celebADataset(Dataset):
@@ -143,6 +147,7 @@ class celebADataset(Dataset):
         img_proc = tt.CenterCrop((self.rescale_size, self.rescale_size))(img_proc)
         sample = {'images': img_crp, 'labels':label, 'flipped':flipped,'bboxes':bbox,'landmarks':lndmrk, 'names':imname, 'orig_landmarks':orig_lndmrk}
         return sample
+
 
 
 class celebADatasetTriplet(Dataset):
@@ -229,12 +234,51 @@ class celebADatasetTriplet(Dataset):
 
 
 
-def init_triplet_loaders(data, stats, batch_size=32, prob=0.5, return_test=False, rescale_size=200):
+def read_celeba_data(dataset_path='../celeba_dataset'):
+  '''
+  function to read files coming with CelebA dataset, returns a big pandas dataframe with all the info
+  '''
+
+  BB_PATH = os.path.join(dataset_path, 'list_bbox_celeba.txt')
+  ID_PATH = os.path.join(dataset_path, 'identity_celeba.txt')
+  LM_PATH = os.path.join(dataset_path, 'list_landmarks_celeba.txt')
+  bboxes = pd.read_csv(BB_PATH, skiprows=1, delim_whitespace=True)
+  labels = pd.read_csv(ID_PATH, sep=' ',header=None,names=['image_id','label'])
+  landmarks = pd.read_csv(LM_PATH,skiprows=1,delim_whitespace=True).reset_index().rename(columns={'index':'image_id'})
+  data_df = bboxes.merge(labels,on='image_id').merge(landmarks, on='image_id')
+
+  #drop images where nose point is not between the eyes - that means the face is looking far to the right or left
+  data_new = data_df[(data_df['lefteye_x'] < data_df['nose_x']) & (data_df['righteye_x'] > data_df['nose_x'])]
+
+  # I will take only those photos whose labels are present LABELS_COUNT_PRESENT times or more in a dataset
+  LABELS_COUNT_PRESENT = 20
+  label_count = data_df.groupby('label').count()['image_id'].reset_index().rename(columns={'image_id':'count'})
+
+  labels_lim = list(label_count[label_count['count']>=LABELS_COUNT_PRESENT]['label'])
+
+  # I will try to make a small dataset of people that will not be present when training the model
+  # will use it for embeddings later
+  random.seed(20)
+  people_not_present = random.sample(labels_lim, 100) # my 100 people 
+  # data_not_present = data_new[data_new['label'].isin(people_not_present)].reset_index()
+
+  labels_lim = list(set(labels_lim) - set(people_not_present))
+  data_new2 = data_new[data_new['label'].isin(labels_lim)].reset_index()
+
+  data_new2['label'] = LabelEncoder().fit_transform(data_new2['label'])
+  data_new2.drop(columns=[data_new2.columns[0]], inplace=True)
+  
+  return data_new2
+
+
+
+def init_triplet_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_test=False, rescale_size=200):
     '''
     Initializes loaders for TripletLoss, this should be done every epoch so each epoch positive and negative class images would be different
-    Takes around 4-5 minutes in free Colab GPU-accelerated platform to initialize (given that it takes 3 hours per epoch to train additional 5 minutes is
-    not a big overhead
+    Takes around 4-5 minutes in free Colab GPU-accelerated platform to initialize (given that it takes 3 hours per epoch to train additional 5 minutes is not a big overhead
     '''
+    data = read_celeba_data(dataset_path)
+
     data1 = data.copy()
     data_pos = data.copy()
     for lab in data1['label'].unique():
@@ -255,6 +299,7 @@ def init_triplet_loaders(data, stats, batch_size=32, prob=0.5, return_test=False
     data_full = pd.concat([data1, data_pos, data_neg], axis=1)
     X = data_full[data_full.columns[~data_full.columns.isin(['label'])]]
     Y = data_full['label']
+    n_classes = Y.nunique()
 
     x_train, x_testval, y_train, y_testval = train_test_split(X,Y, shuffle=True, stratify=Y,test_size=0.2)
     if return_test:
@@ -278,8 +323,7 @@ def init_triplet_loaders(data, stats, batch_size=32, prob=0.5, return_test=False
         A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_upper=3, shadow_dimension=4, p=prob),
         A.MotionBlur(blur_limit=(3,8), p=prob),
         A.CLAHE(clip_limit=10,p=prob),
-        A.Posterize(p=prob),
-      ])
+        A.Posterize(p=prob)])
 
     train_data = celebADatasetTriplet(x_train,y_train, transform=transform, aug=train_transform)
     if return_test:
@@ -294,20 +338,22 @@ def init_triplet_loaders(data, stats, batch_size=32, prob=0.5, return_test=False
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True)
     else:
         test_loader = None
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, n_classes
 
 
 
-def init_loaders(data, stats, batch_size=32, prob=0.5, return_test=True, rescale_size=200):
-
-  data1 = data.copy()
+def init_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_test=True, rescale_size=200):
+  '''
+  initialize loaders from dataframe ()
+  '''
+  data1 = read_celeba_data(dataset_path)
 
   X = data1[data1.columns[~data1.columns.isin(['label','index'])]]
   Y = data1['label']
   x_train, x_testval, y_train, y_testval = train_test_split(X,Y, shuffle=True, stratify=Y,test_size=0.2)
   if return_test:
     x_val, x_test, y_val, y_test = train_test_split(x_testval, y_testval, shuffle=True, stratify=y_testval, test_size=0.2)
-
+  n_classes = Y.nunique()
 
   transform = MyCompose([
       MyRandomHorizontalFlip(0.5),
@@ -327,8 +373,7 @@ def init_loaders(data, stats, batch_size=32, prob=0.5, return_test=True, rescale
     A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_upper=3, shadow_dimension=4, p=prob),
     A.MotionBlur(blur_limit=(3,8), p=prob),
     A.CLAHE(clip_limit=10,p=prob),
-    A.Posterize(p=prob),
-  ])
+    A.Posterize(p=prob)])
   train_data = celebADataset(x_train,y_train, transform, aug=train_transform)
   if return_test:
     val_data = celebADataset(x_val, y_val, transform)
@@ -342,4 +387,4 @@ def init_loaders(data, stats, batch_size=32, prob=0.5, return_test=True, rescale
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=2)
   else:
     test_loader = None
-  return train_loader, val_loader, test_loader
+  return train_loader, val_loader, test_loader, n_classes

@@ -4,8 +4,8 @@ import torch
 import torchvision.transforms as tt
 import torchvision.transforms.functional as F
 from tqdm import tqdm, tqdm_notebook
-from ..utils.losses import StandCrossEntropyLoss, ArcFaceLoss, cosine_distance
-from ..utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
+from ...utils.losses import StandCrossEntropyLoss, ArcFaceLoss, cosine_distance
+from ...utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
 
 
 
