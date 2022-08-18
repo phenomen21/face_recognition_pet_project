@@ -264,8 +264,7 @@ def init_triplet_loaders(data, batch_size=32, prob=0.5, return_test=False):
         A.HueSaturationValue(p=prob),
         albumentations.OneOf([
             A.Sharpen(),
-            A.AdvancedBlur(),
-        ], p=prob),
+            A.AdvancedBlur()], p=prob),
         A.PixelDropout(dropout_prob=0.05, p=np.clip(prob,0,0.3)),
         A.ToSepia(p=np.clip(prob,0,0.2)),
         albumentations.augmentations.dropout.cutout.Cutout(num_holes=1, max_h_size=55, max_w_size=55, p=np.clip(prob,0,0.5)),
@@ -292,3 +291,48 @@ def init_triplet_loaders(data, batch_size=32, prob=0.5, return_test=False):
     return train_loader, val_loader, test_loader
 
 
+def init_loaders(data, batch_size=32, prob=0.5, return_test=True):
+
+  data1 = data.copy()
+
+  X = data1[data1.columns[~data1.columns.isin(['label','index'])]]
+  Y = data1['label']
+  x_train, x_testval, y_train, y_testval = train_test_split(X,Y, shuffle=True, stratify=Y,test_size=0.2)
+  if return_test:
+    x_val, x_test, y_val, y_test = train_test_split(x_testval, y_testval, shuffle=True, stratify=y_testval, test_size=0.2)
+
+
+  transform = MyCompose([
+      MyRandomHorizontalFlip(0.5),
+      tt.Resize((RESCALE_SIZE, RESCALE_SIZE)),
+      tt.Normalize(*stats)])
+
+  train_transform = albumentations.Compose([
+    A.RGBShift(p=prob),
+    A.HueSaturationValue(p=prob),
+    albumentations.OneOf([
+        A.Sharpen(),
+        A.AdvancedBlur()], p=prob),
+    A.PixelDropout(dropout_prob=0.05, p=np.clip(prob,0,0.3)),
+    A.ToSepia(p=np.clip(prob,0,0.2)),
+    albumentations.augmentations.dropout.cutout.Cutout(num_holes=1, max_h_size=55, max_w_size=55, p=np.clip(prob,0,0.5)),
+    albumentations.augmentations.dropout.cutout.Cutout(num_holes=2, max_h_size=55, max_w_size=55, p=np.clip(prob,0,0.5)),
+    A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_upper=3, shadow_dimension=4, p=prob),
+    A.MotionBlur(blur_limit=(3,8), p=prob),
+    A.CLAHE(clip_limit=10,p=prob),
+    A.Posterize(p=prob),
+  ])
+  train_data = celebADataset(x_train,y_train, transform, aug=train_transform)
+  if return_test:
+    val_data = celebADataset(x_val, y_val, transform)
+    test_data = celebADataset(x_test,y_test, transform)
+  else:
+    val_data = celebADataset(x_testval, y_testval, transform)
+
+  train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
+  val_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True, num_workers=2)
+  if return_test:
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=2)
+  else:
+    test_loader = None
+  return train_loader, val_loader, test_loader

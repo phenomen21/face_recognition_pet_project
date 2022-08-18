@@ -55,3 +55,20 @@ class ArcFaceLoss(nn.Module):
       return torch.nn.functional.cross_entropy(logits_new, labels)
     else:
       return logits_new
+
+
+class TripletLoss(nn.Module):
+    def __init__(self):
+        super(TripletLoss, self).__init__()
+
+    def forward(self, orig, pos, neg):
+      orig = torch.nn.functional.normalize(orig,p=2,dim=-1)
+      pos = torch.nn.functional.normalize(pos,p=2,dim=-1)
+      neg = torch.nn.functional.normalize(neg,p=2,dim=-1)
+      return torch.nn.functional.triplet_margin_with_distance_loss(orig, pos, neg,
+                                                   distance_function=cosine_distance,
+                                                   margin=1.0, swap=False, reduction='mean')
+
+
+def cosine_distance(vec1, vec2, dim=-1):
+    return 1 - torch.nn.functional.cosine_similarity(vec1,vec2, dim=dim)
