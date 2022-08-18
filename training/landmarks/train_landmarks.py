@@ -31,4 +31,5 @@ optimizer = torch.optim.AdamW(params=[
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=0, factor=0.5, threshold_mode='rel',cooldown=1,threshold=0.05)
 
 # train
-history = train_land(train_loader, val_loader, model=model_arc, criterion=cce_loss, epochs=8, opt=optimizer, sched=scheduler,start_epoch=0, device=DEVICE, model_name=model_name)
+history = train_land(train_loader, val_loader, model=model_arc, criterion=cce_loss, epochs=5, opt=optimizer, sched=scheduler,start_epoch=0, 
+                                                                                                device=DEVICE, model_name=model_name)
