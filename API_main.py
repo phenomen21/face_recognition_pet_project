@@ -3,6 +3,15 @@ import os
 from flask import Flask, make_response, request, render_template_string, render_template
 from flask_restful import Resource, Api, reqparse
 import werkzeug
+import torch
+import yolov5
+import yolov5.models as models
+from yolov5.models.common import DetectMultiBackend
+from yolov5.utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox
+from yolov5.utils.general import non_max_suppression
+from .utils.image_processing import crop_img_bbox, align_face
+
+
 
 
 WORK_DIR = './processing/'

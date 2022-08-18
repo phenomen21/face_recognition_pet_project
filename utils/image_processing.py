@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import math
 import PIL
 from PIL import Image
 import torch
@@ -10,7 +12,7 @@ import matplotlib.patches as patches
 
 
 
-def show_img(image_name, bbox=None, landmarks=None, ax=None, name=''):
+def show_img(image_name, bbox=None, landmarks=None, ax=None, name='', img_path='celeba_dataset'):
     '''
     for one image
     works both for file names, paths and for images in dataset,
@@ -23,7 +25,7 @@ def show_img(image_name, bbox=None, landmarks=None, ax=None, name=''):
       if os.path.isabs(image_name):
         img = Image.open(image_name)
       else:
-        img = Image.open(os.path.join(IMG_PATH, image_name))
+        img = Image.open(os.path.join(img_path, image_name))
       ax.imshow(img, cmap='gray')
     elif isinstance(image_name, torch.Tensor):
       img = torch.permute(torch.squeeze(image_name), (1,2,0))
@@ -43,11 +45,40 @@ def show_img(image_name, bbox=None, landmarks=None, ax=None, name=''):
     # plt.show()
 
 
+
+def save_img(image_name, bbox=None, landmarks=None, img_path='celeba_dataset', file_name='', file_path='./processing/'):
+    '''
+    saves one image with bboxes if present, with landmarks if present
+    works both for file names, paths and for images in dataset
+    '''
+    fif, ax= plt.subplots(1,1,figsize=(5,5))
+    if isinstance(image_name,str):
+      if os.path.isabs(image_name):
+        img = Image.open(image_name)
+      else:
+        img = Image.open(os.path.join(img_path, image_name))
+      ax.imshow(img, cmap='gray')
+    elif isinstance(image_name, torch.Tensor):
+      img = torch.permute(torch.squeeze(image_name), (1,2,0))
+      ax.imshow(img)
+    elif isinstance(image_name,PIL.Image.Image):
+      ax.imshow(image_name)
+
+    if bbox is not None:
+      rect = patches.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], linewidth=3, edgecolor='black', facecolor='none')
+      ax.add_patch(rect)
+    if landmarks is not None:
+      landmrks = np.array(landmarks).reshape(-1, 2)
+      ax.scatter(landmrks[:, 0], landmrks[:, 1], s=30, marker='*', c='r')
+    plt.savefig(os.path.join(file_path,file_name,'.jpg'))
+
+
+
 def denorm(img_tensors, stats):
     return img_tensors * stats[1][0] + stats[0][0]
 
 
-def show_imgs(images_names, bboxes=None, landmarks=None, num=5):
+def show_imgs(images_names, bboxes=None, landmarks=None, num=5, img_path='celeba_dataset'):
     '''
     works both for file names, paths and for images in dataset, also shows bboxes if present
     also shows landmarks if present
@@ -62,7 +93,7 @@ def show_imgs(images_names, bboxes=None, landmarks=None, num=5):
         if os.path.isabs(img):
           img = Image.open(img)
         else:
-          img = Image.open(os.path.join(IMG_PATH, img))
+          img = Image.open(os.path.join(img_path, img))
       elif isinstance(img, torch.Tensor):
         img = torch.permute(img, (1,2,0))
         img = denorm(img)
@@ -91,14 +122,14 @@ def show_batch(dl, nmax=64):
       break
 
 
-def crop_img_bbox(image, bbox, IMG_PATH=''):
+def crop_img_bbox(image, bbox, IMG_PATH='celeba_dataset'):
   '''
   crop image given bbox, takes PIL image or torch.Tensor
   returns cropped image of the same type
   '''
   if isinstance(bbox, torch.Tensor):
     bbox = bbox.numpy()
-  if isinstance(image, str): #img = filename
+  if isinstance(image, str): #image = filename
     if os.path.isabs(image):
       img = Image.open(image)
     else:
