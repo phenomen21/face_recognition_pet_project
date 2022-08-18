@@ -1,0 +1,25 @@
+<!DOCTYPE html> 
+<html> 
+ <head> 
+  <title> Celeb-finder - A face recognition pipeline example </title> 
+ </head> 
+ <body>
+  <!-- HTML5 Input Form Elements -->
+  <input id="fileupload" type="file" name="fileupload" /> 
+  <button id="upload-button" onclick="uploadFile()"> Find a close celebrity </button>
+
+  <!-- Ajax JavaScript File Upload Logic -->
+  <script>
+  async function uploadFile() {
+    let formData = new FormData(); 
+    formData.append("file", fileupload.files[0]);
+    await fetch('/', {
+    method: "POST", 
+    body: formData
+  }); 
+  alert('The file has been uploaded successfully.');
+  }
+  </script>
+
+ </body> 
+</html>
