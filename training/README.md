@@ -29,7 +29,7 @@ ImageNet pretrained YOLOv5m from https://github.com/ultralytics/yolov5 was trans
 2. **Landmarks**
 
 ImageNet pretrained Rexnet_200 from PyTorch Image Models repository (timm - https://github.com/rwightman/pytorch-image-models) was transfer trained on cleaned CelebA dataset with landmarks. Albumentation libaray (https://albumentations.ai/) was used to regularize training process by augmenting images. Pictures from the training dataset looked like this:
-![image](https://user-images.githubusercontent.com/89016122/185155253-2c154e42-9a94-462d-a2b1-af9440396d80.png)
+![image](https://user-images.githubusercontent.com/89016122/185302633-68f3a982-0e9f-4581-a7c3-8096ec65836b.png)
 
 - learning rates were set to 1e-4 for the feature extractor and 1e-3 for the head of the model;
 - 3 epochs were completed;
