@@ -4,19 +4,19 @@ import torch
 import torchvision.transforms as tt
 import torchvision.transforms.functional as F
 from tqdm import tqdm, tqdm_notebook
-from .utils.losses import StandCrossEntropyLoss, ArcFaceLoss
-from .utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
+from ..utils.losses import StandCrossEntropyLoss, ArcFaceLoss, cosine_distance
+from ..utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
 
 
 
-def fit_epoch(model, train_loader, criterion, optimizer):
+def fit_epoch(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
     running_corrects = 0
     processed_data = 0
 
     for batch in tqdm(train_loader, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}'):
-        inputs = batch['images'].to(DEVICE)
-        labels = batch['labels'].to(DEVICE)
+        inputs = batch['images'].to(device)
+        labels = batch['labels'].to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         # print(labels)
@@ -36,15 +36,15 @@ def fit_epoch(model, train_loader, criterion, optimizer):
 
 
 
-def eval_epoch(model, val_loader, criterion):
+def eval_epoch(model, val_loader, criterion, device):
     model.eval()
     running_loss = 0.0
     running_corrects = 0
     processed_size = 0
     print('Validating model:')
     for batch in tqdm(val_loader):
-        inputs = batch['images'].to(DEVICE)
-        labels = batch['labels'].to(DEVICE)
+        inputs = batch['images'].to(device)
+        labels = batch['labels'].to(device)
 
         with torch.set_grad_enabled(False):
             outputs = model(inputs)
@@ -63,17 +63,17 @@ def eval_epoch(model, val_loader, criterion):
 
 
 
-def train(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0):
+def train(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, model_name='', device='cpu'):
     history = []
     log_template = "Epoch {ep:03d} train_loss: {t_loss:0.4f} \
     val_loss {v_loss:0.4f} train_acc {t_acc:0.4f} val_acc {v_acc:0.4f}"
 
     for epoch in range(epochs):
       print('\nEpoch {:03d}/{:03d} is going: LR_class = {:.2e}, LR_feat={:.2e}'.format(epoch+1+start_epoch, epochs+start_epoch,
-                                                                                           optimizer.param_groups[0]['lr'], optimizer.param_groups[1]['lr']))
-      train_loss, train_acc = fit_epoch(model, train_loader, criterion, opt)
+                                                                                           opt.param_groups[0]['lr'], opt.param_groups[1]['lr']))
+      train_loss, train_acc = fit_epoch(model, train_loader, criterion, opt, device)
 
-      val_loss, val_acc = eval_epoch(model, val_loader, criterion)
+      val_loss, val_acc = eval_epoch(model, val_loader, criterion, device)
       history.append((train_loss, train_acc, val_loss, val_acc))
       if sched is not None:
         sched.step(val_acc)
@@ -85,7 +85,7 @@ def train(train_loader, val_loader, model, criterion, epochs, opt, sched=None, s
 
 
 
-def fit_epoch_triplet(model, train_loader, criterion, optimizer):
+def fit_epoch_triplet(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
     running_corrects = 0
     processed_data = 0
@@ -93,10 +93,10 @@ def fit_epoch_triplet(model, train_loader, criterion, optimizer):
     mean_emb = dict()
     model.train()
     for batch in tqdm(train_loader, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}'):
-        inputs = batch['images'].to(DEVICE)
+        inputs = batch['images'].to(device)
         labels = batch['labels'].detach().cpu().numpy()
-        inputs_pos = batch['images_pos'].to(DEVICE)
-        inputs_neg = batch['images_neg'].to(DEVICE)
+        inputs_pos = batch['images_pos'].to(device)
+        inputs_neg = batch['images_neg'].to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         outputs_pos = model(inputs_pos)
@@ -125,7 +125,7 @@ def fit_epoch_triplet(model, train_loader, criterion, optimizer):
 
 
 
-def eval_epoch_triplet(model, val_loader, criterion, mean_embeddings):
+def eval_epoch_triplet(model, val_loader, criterion, mean_embeddings, device):
     model.eval()
     running_loss = 0.0
     running_corrects = 0
@@ -134,10 +134,10 @@ def eval_epoch_triplet(model, val_loader, criterion, mean_embeddings):
     val_cnt = 0
     print('Validating model:')
     for batch in tqdm(val_loader):
-      inputs = batch['images'].to(DEVICE)
+      inputs = batch['images'].to(device)
       labels = batch['labels'].detach().cpu().numpy()
-      inputs_pos = batch['images_pos'].to(DEVICE)
-      inputs_neg = batch['images_neg'].to(DEVICE)
+      inputs_pos = batch['images_pos'].to(device)
+      inputs_neg = batch['images_neg'].to(device)
 
       with torch.set_grad_enabled(False):
         outputs = model(inputs)
@@ -163,7 +163,7 @@ def eval_epoch_triplet(model, val_loader, criterion, mean_embeddings):
 
 
 
-def train_triplet(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0):
+def train_triplet(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, device='cpu', model_name=''):
     history = []
     global val_cossim_pred
     log_template = "Epoch {ep:03d} train_loss: {t_loss:0.4f} \
@@ -172,13 +172,13 @@ def train_triplet(train_loader, val_loader, model, criterion, epochs, opt, sched
     for epoch in range(epochs):
       print('\nEpoch {:03d}/{:03d} is going: LR = {:.2e}'.format(epoch+1+start_epoch, epochs+start_epoch,
                                                                                            opt.param_groups[0]['lr']))
-      train_loss, mean_emb = fit_epoch_triplet(model, train_loader, criterion, opt)
+      train_loss, mean_emb = fit_epoch_triplet(model, train_loader, criterion, opt, device=device)
 
       # Save model before validation (25 min on full dataset)
       model_filename = '{}_triplet_epoch_{:02d}'.format(model_name, epoch+1+start_epoch)
       torch.save(model, model_filename)
 
-      val_loss, val_cossim = eval_epoch_triplet(model, val_loader, criterion, mean_embeddings=mean_emb)
+      val_loss, val_cossim = eval_epoch_triplet(model, val_loader, criterion, mean_embeddings=mean_emb, device=device)
       history.append((train_loss, val_loss, val_cossim))
       if sched is not None:
         sched.step(val_cossim)
@@ -190,15 +190,15 @@ def train_triplet(train_loader, val_loader, model, criterion, epochs, opt, sched
 
 
 
-def fit_epoch_arc(model, train_loader, criterion, optimizer):
+def fit_epoch_arc(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
     running_corrects = 0
     processed_data = 0
     batch_n=0
     model.train()
     for batch in tqdm(train_loader, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}'):
-        inputs = batch['images'].to(DEVICE)
-        labels = batch['labels'].to(DEVICE)
+        inputs = batch['images'].to(device)
+        labels = batch['labels'].to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, labels, loss=True)
@@ -217,15 +217,15 @@ def fit_epoch_arc(model, train_loader, criterion, optimizer):
 
 
 
-def eval_epoch_arc(model, val_loader, criterion):
+def eval_epoch_arc(model, val_loader, criterion, device):
     model.eval()
     running_loss = 0.0
     running_corrects = 0
     processed_size = 0
     print('Validating model:')
     for batch in tqdm(val_loader):
-        inputs = batch['images'].to(DEVICE)
-        labels = batch['labels'].to(DEVICE)
+        inputs = batch['images'].to(device)
+        labels = batch['labels'].to(device)
 
         with torch.set_grad_enabled(False):
             outputs = model(inputs)
@@ -243,17 +243,17 @@ def eval_epoch_arc(model, val_loader, criterion):
 
 
 
-def train_arc(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0):
+def train_arc(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, device='cpu', model_name=''):
     history = []
     log_template = "Epoch {ep:03d} train_loss: {t_loss:0.4f} \
     val_loss {v_loss:0.4f} train_acc {t_acc:0.4f} val_acc {v_acc:0.4f}"
 
     for epoch in range(epochs):
       print('\nEpoch {:03d}/{:03d} is going: LR_class = {:.2e}, LR_feat={:.2e}'.format(epoch+1+start_epoch, epochs+start_epoch,
-                                                                                           optimizer.param_groups[0]['lr'], optimizer.param_groups[1]['lr']))
-      train_loss, train_acc = fit_epoch_arc(model, train_loader, criterion, opt)
+                                                                                           opt.param_groups[0]['lr'], opt.param_groups[1]['lr']))
+      train_loss, train_acc = fit_epoch_arc(model, train_loader, criterion, opt, device=device)
 
-      val_loss, val_acc = eval_epoch_arc(model, val_loader, criterion)
+      val_loss, val_acc = eval_epoch_arc(model, val_loader, criterion, device)
       history.append((train_loss, train_acc, val_loss, val_acc))
       if sched is not None:
         sched.step(val_acc)
