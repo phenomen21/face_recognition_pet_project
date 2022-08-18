@@ -1,3 +1,4 @@
 .vscode
 /yolov5*
 *.pyc
+/processing*
