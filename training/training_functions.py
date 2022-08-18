@@ -4,12 +4,12 @@ import torch
 import torchvision.transforms as tt
 import torchvision.transforms.functional as F
 from tqdm import tqdm, tqdm_notebook
-from ...utils.losses import StandCrossEntropyLoss, ArcFaceLoss, cosine_distance
-from ...utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
+from ..utils.losses import StandCrossEntropyLoss, ArcFaceLoss, cosine_distance
+from ..utils.datasets import MyCompose, MyRandomHorizontalFlip, celebADataset, celebADatasetTriplet, init_triplet_loaders
 
 
 
-def fit_epoch(model, train_loader, criterion, optimizer, device):
+def fit_epoch_class(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
     running_corrects = 0
     processed_data = 0
@@ -36,7 +36,7 @@ def fit_epoch(model, train_loader, criterion, optimizer, device):
 
 
 
-def eval_epoch(model, val_loader, criterion, device):
+def eval_epoch_class(model, val_loader, criterion, device):
     model.eval()
     running_loss = 0.0
     running_corrects = 0
@@ -63,7 +63,7 @@ def eval_epoch(model, val_loader, criterion, device):
 
 
 
-def train(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, model_name='', device='cpu'):
+def train_class(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, model_name='', device='cpu'):
     history = []
     log_template = "Epoch {ep:03d} train_loss: {t_loss:0.4f} \
     val_loss {v_loss:0.4f} train_acc {t_acc:0.4f} val_acc {v_acc:0.4f}"
@@ -71,9 +71,9 @@ def train(train_loader, val_loader, model, criterion, epochs, opt, sched=None, s
     for epoch in range(epochs):
       print('\nEpoch {:03d}/{:03d} is going: LR_class = {:.2e}, LR_feat={:.2e}'.format(epoch+1+start_epoch, epochs+start_epoch,
                                                                                            opt.param_groups[0]['lr'], opt.param_groups[1]['lr']))
-      train_loss, train_acc = fit_epoch(model, train_loader, criterion, opt, device)
+      train_loss, train_acc = fit_epoch_class(model, train_loader, criterion, opt, device)
 
-      val_loss, val_acc = eval_epoch(model, val_loader, criterion, device)
+      val_loss, val_acc = eval_epoch_class(model, val_loader, criterion, device)
       history.append((train_loss, train_acc, val_loss, val_acc))
       if sched is not None:
         sched.step(val_acc)
@@ -263,4 +263,69 @@ def train_arc(train_loader, val_loader, model, criterion, epochs, opt, sched=Non
       torch.save(model, model_filename)
       loss_filename = model_filename + '_loss'
       torch.save(criterion, loss_filename)
+    return history
+
+
+
+def fit_epoch_land(model, train_loader, criterion, optimizer, device):
+    running_loss = 0.0
+    processed_data = 0
+  
+    for batch in tqdm(train_loader, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}'):
+        inputs = batch['images'].to(device)
+        landmarks = batch['landmarks'].reshape(-1,10).to(device)
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, landmarks)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item() * inputs.size(0)
+        processed_data += inputs.size(0)
+        del inputs
+        del landmarks
+        torch.cuda.empty_cache()
+    train_loss = running_loss / processed_data
+    return train_loss
+
+def eval_epoch_land(model, val_loader, criterion, device):
+    model.eval()
+    running_loss = 0.0
+    processed_size = 0
+    print('Validating model:')
+    for batch in tqdm(val_loader):
+        inputs = batch['images'].to(device)
+        landmarks = batch['landmarks'].reshape(-1,10).to(device)
+
+        with torch.set_grad_enabled(False):
+            outputs = model(inputs)
+            loss = criterion(outputs, landmarks)
+
+        running_loss += loss.item() * inputs.size(0)
+        processed_size += inputs.size(0)
+        del inputs
+        del landmarks
+        torch.cuda.empty_cache()
+    val_loss = running_loss / processed_size    
+    return val_loss
+
+
+
+def train_land(train_loader, val_loader, model, criterion, epochs, opt, sched=None, start_epoch=0, device='cpu', model_name=''):
+    history = []
+    log_template = "Epoch {ep:03d} train_loss: {t_loss:0.4f} \
+    val_loss {v_loss:0.4f}"
+
+    for epoch in range(epochs):
+      print('\nEpoch {:03d}/{:03d} is going: LR_head = {:.2e}, LR_feat={:.2e}'.format(epoch+1+start_epoch, epochs+start_epoch,  
+                                                                                           opt.param_groups[0]['lr'], opt.param_groups[1]['lr']))
+      train_loss = fit_epoch_land(model, train_loader, criterion, opt, device)
+            
+      val_loss = eval_epoch_land(model, val_loader, criterion, device)
+      history.append((train_loss, val_loss))
+      if sched is not None:
+        sched.step(val_loss)
+      print(log_template.format(ep=epoch+1+start_epoch, t_loss=train_loss,\
+                                           v_loss=val_loss))     
+      model_filename = '{}_epoch_{:02d}'.format(model_name, epoch+1+start_epoch)
+      torch.save(model, model_filename)
     return history

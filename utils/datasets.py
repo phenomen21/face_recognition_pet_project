@@ -342,9 +342,11 @@ def init_triplet_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_te
 
 
 
-def init_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_test=True, rescale_size=200):
+
+def init_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_test=True, rescale_size=200, align=True):
   '''
-  initialize loaders from dataframe ()
+  initialize loaders from dataframe
+  returns train val and test loaders and number of classes
   '''
   data1 = read_celeba_data(dataset_path)
 
@@ -374,12 +376,14 @@ def init_loaders(dataset_path, stats, batch_size=32, prob=0.5, return_test=True,
     A.MotionBlur(blur_limit=(3,8), p=prob),
     A.CLAHE(clip_limit=10,p=prob),
     A.Posterize(p=prob)])
-  train_data = celebADataset(x_train,y_train, transform, aug=train_transform)
+
+  
+  train_data = celebADataset(x_train,y_train, transform, aug=train_transform, align=align, rescale_size=rescale_size)
   if return_test:
-    val_data = celebADataset(x_val, y_val, transform)
-    test_data = celebADataset(x_test,y_test, transform)
+    val_data = celebADataset(x_val, y_val, transform, align=align, rescale_size=rescale_size)
+    test_data = celebADataset(x_test,y_test, transform, align=align, rescale_size=rescale_size)
   else:
-    val_data = celebADataset(x_testval, y_testval, transform)
+    val_data = celebADataset(x_testval, y_testval, transform, align=align, rescale_size=rescale_size)
 
   train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
   val_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True, num_workers=2)
