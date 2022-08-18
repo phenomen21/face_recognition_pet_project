@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 import PIL
 from PIL import Image
 import torch
@@ -8,6 +9,8 @@ import torchvision.transforms.functional as F
 from torchvision import models
 from torch.utils.data import Dataset
 from collections import deque
+from image_processing import crop_img_bbox, align_face
+from sklearn.model_selection import train_test_split
 import albumentations
 import albumentations.augmentations.transforms as A
 
@@ -80,12 +83,13 @@ class celebADataset(Dataset):
     'names' - file names of the output images;
     'orig_landmarks' - original landmarks as presented in the CelebA dataset.
     '''
-    def __init__(self, data_x, data_y, transform=None, aug=None, align=True):
+    def __init__(self, data_x, data_y, transform=None, aug=None, align=True, rescale_size=200):
         self.data_x = data_x.copy()
         self.data_y = data_y.copy()
         self.transform = transform
         self.aug = aug
         self.align = align
+        self.rescale_size=rescale_size
 
     def __len__(self):
         return len(self.data_y)
@@ -120,8 +124,8 @@ class celebADataset(Dataset):
         if lndmrks_flag:
           lndmrk[:, 0] -= bbox[0]
           lndmrk[:, 1] -= bbox[1]
-          lndmrk[:, 0] *= RESCALE_SIZE / (bbox[2] + 1e-10)
-          lndmrk[:, 1] *= RESCALE_SIZE / (bbox[3] + 1e-10)
+          lndmrk[:, 0] *= self.rescale_size / (bbox[2] + 1e-10)
+          lndmrk[:, 1] *= self.rescale_size / (bbox[3] + 1e-10)
         if self.transform:
           img_crp, flipped = self.transform(img_aug)
         else:
@@ -130,13 +134,13 @@ class celebADataset(Dataset):
         # flip landmarks
         if lndmrks_flag:
           if flipped:
-            lndmrk[:,0] = (RESCALE_SIZE - lndmrk[:,0])
+            lndmrk[:,0] = (self.rescale_size - lndmrk[:,0])
         # align face
         if self.align:
             img_crp, lndmrk = align_face(img_crp,lndmrk)
         # resize
-        img_proc = tt.Resize((RESCALE_SIZE, RESCALE_SIZE))(img_proc)
-        img_proc = tt.CenterCrop((RESCALE_SIZE, RESCALE_SIZE))(img_proc)
+        img_proc = tt.Resize((self.rescale_size, self.rescale_size))(img_proc)
+        img_proc = tt.CenterCrop((self.rescale_size, self.rescale_size))(img_proc)
         sample = {'images': img_crp, 'labels':label, 'flipped':flipped,'bboxes':bbox,'landmarks':lndmrk, 'names':imname, 'orig_landmarks':orig_lndmrk}
         return sample
 
@@ -147,7 +151,7 @@ class celebADatasetTriplet(Dataset):
     Takes a pandas.DataFrame object consisting of three consecutive tables: for anchor image, positive class image and negative class image respectively.
     Returns the same structure as basic CelebADataset class for every type of image (anchor, positive class, negative class)
     """
-    def __init__(self, data_x, data_y, transform=None, aug=None):
+    def __init__(self, data_x, data_y, transform=None, aug=None, rescale_size=200):
         self.data_x = data_x.iloc[:,:15].copy()
         self.data_y = data_y.copy()
         self.data_pos = data_x.iloc[:,15:31].copy()
@@ -156,6 +160,7 @@ class celebADatasetTriplet(Dataset):
         self.data_neg.drop(columns=['label_neg'], inplace=True)
         self.transform = transform
         self.aug = aug
+        self.rescale_size = rescale_size
 
     def __len__(self):
         return len(self.data_y)
@@ -197,8 +202,8 @@ class celebADatasetTriplet(Dataset):
             if lndmrks_flag:
               lndmrk[:, 0] -= bbox[0]
               lndmrk[:, 1] -= bbox[1]
-              lndmrk[:, 0] *= RESCALE_SIZE / (bbox[2] + 1e-8)
-              lndmrk[:, 1] *= RESCALE_SIZE / (bbox[3] + 1e-8)
+              lndmrk[:, 0] *= self.rescale_size / (bbox[2] + 1e-8)
+              lndmrk[:, 1] *= self.rescale_size / (bbox[3] + 1e-8)
             if self.transform:
               img_crp, flipped = self.transform(img_aug)
             else:
@@ -207,12 +212,12 @@ class celebADatasetTriplet(Dataset):
             # try to flip landmark
             if lndmrks_flag:
               if flipped:
-                lndmrk[:,0] = (RESCALE_SIZE - lndmrk[:,0])
+                lndmrk[:,0] = (self.rescale_size - lndmrk[:,0])
             # align original face
             img_proc, new_lndmrk = align_face(img_crp,lndmrk)
             # resize
-            img_proc = tt.Resize((RESCALE_SIZE, RESCALE_SIZE))(img_proc)
-            img_proc = tt.CenterCrop((RESCALE_SIZE, RESCALE_SIZE))(img_proc)
+            img_proc = tt.Resize((self.rescale_size, self.rescale_size))(img_proc)
+            img_proc = tt.CenterCrop((self.rescale_size, self.rescale_size))(img_proc)
 
             sample['images'+postfixes_list[i]] = img_proc
             sample['labels'+postfixes_list[i]] = label
@@ -223,7 +228,8 @@ class celebADatasetTriplet(Dataset):
         return sample
 
 
-def init_triplet_loaders(data, batch_size=32, prob=0.5, return_test=False):
+
+def init_triplet_loaders(data, stats, batch_size=32, prob=0.5, return_test=False, rescale_size=200):
     '''
     Initializes loaders for TripletLoss, this should be done every epoch so each epoch positive and negative class images would be different
     Takes around 4-5 minutes in free Colab GPU-accelerated platform to initialize (given that it takes 3 hours per epoch to train additional 5 minutes is
@@ -256,7 +262,7 @@ def init_triplet_loaders(data, batch_size=32, prob=0.5, return_test=False):
 
     transform = MyCompose([
           MyRandomHorizontalFlip(0.5),
-          tt.Resize((RESCALE_SIZE, RESCALE_SIZE)),
+          tt.Resize((rescale_size, rescale_size)),
           tt.Normalize(*stats)])
 
     train_transform = albumentations.Compose([
@@ -291,7 +297,8 @@ def init_triplet_loaders(data, batch_size=32, prob=0.5, return_test=False):
     return train_loader, val_loader, test_loader
 
 
-def init_loaders(data, batch_size=32, prob=0.5, return_test=True):
+
+def init_loaders(data, stats, batch_size=32, prob=0.5, return_test=True, rescale_size=200):
 
   data1 = data.copy()
 
@@ -304,7 +311,7 @@ def init_loaders(data, batch_size=32, prob=0.5, return_test=True):
 
   transform = MyCompose([
       MyRandomHorizontalFlip(0.5),
-      tt.Resize((RESCALE_SIZE, RESCALE_SIZE)),
+      tt.Resize((rescale_size, rescale_size)),
       tt.Normalize(*stats)])
 
   train_transform = albumentations.Compose([
