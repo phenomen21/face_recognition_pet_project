@@ -2,7 +2,7 @@
 
 This is a pet project in face recognition problem of Computer Vision problem family. The aim of the project was to make a pipeline of face detection, alignment and  recognition without InsightFace-trained neural networks - only neural networks pretrained on ImageNet. The project is developed using PyTorch torchvision framework.
 
-The project arose from the final assignment at Deep Learning School (https://en.dlschool.org/) Spring 2022 first semester, the assignment was as follows: 
+The project started as the final assignment at Deep Learning School (https://en.dlschool.org/) Spring 2022 first semester, the assignment was as follows: 
 - train any classifier on "CelebA Aligned and Cropped" dataset (https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) using Categorical Cross-Entropy Loss, Triplet Loss and ArcFace Loss (only ImageNet pretrained networks were allowed);
 - calculate cosine similarities distributions on pairs of faces that the net never seen before: different pictures of the same person and different people;
 - calculate identification rate metric (TPR @ FPR).
