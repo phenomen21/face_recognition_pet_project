@@ -56,8 +56,8 @@ ImageNet pretrained Rexnet_200 from PyTorch Image Models repository (timm - http
 - learning rate scheduler ReduceOnPlateau was used;
 - heavy augmentations with Albumentation library were used;
 - each epoch took approximately 45min of training and 5min of validation;
-- first 8 epochs were trained with CCE loss, achieved val_accuracy of 0.96;
-- next 22 epochs were trained with ArcFace loss, achieved val_accuracy of 0.92
+- epochs 1-8 were trained with CCE loss, achieved val_accuracy of 0.96;
+- epochs 9-30 were trained with ArcFace loss, achieved val_accuracy of 0.92
 
 |epoch| loss type | train_acc| val_acc|
 |----|----|----|----|
