@@ -1,7 +1,7 @@
 .vscode
 /yolov5*
 *.pyc
-/processing*
+/processing/*
 /__pycache*
 *.code-workspace
 /photos/

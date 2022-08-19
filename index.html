@@ -4,6 +4,13 @@
   <title> Celeb-finder - A face recognition pipeline example </title> 
  </head> 
  <body>
+  <h1> A face recognition pipeline demonstrated</h1>
+  <p>Upload somebody's photo - the "Celeb-finder" will demonstrated what it takes to recognize a face on it</p>
+  <p>First, it will search a face on a picture - it takes a specially trained neural network to search for it </p>
+  <p>Next it will recognize certain points on the face: eyes, nose and mouth - this is the job for the second neural network</p>
+  <p>Next it will rotate and resize the face so the eyes and mouth will be on preset locations - no neural network here</p>
+  <p>Finally the third neural network will encode the face in a special series of numbers and it will look for the closest relatives it could find in its celebrities database, which is over 6.3k people</p>
+  <p>The Celeb-finder will show you the person it thinks is the closest match to a given face</p>
   <!-- HTML5 Input Form Elements -->
   <input id="fileupload" type="file" name="fileupload" /> 
   <button id="upload-button" onclick="uploadFile()"> Find a close celebrity </button>

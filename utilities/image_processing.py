@@ -56,7 +56,7 @@ def cv_draw_star(image, x,y,size):
 
 
 
-def save_img(image, bbox=None, landmarks=None, name='/content/image.jpg'):
+def save_img(image, bbox=None, landmarks=None, name='image.jpg', save_path='./processing/'):
     '''
     for one image
     works both for images names and for images in dataset, also saves bboxes if present
@@ -80,7 +80,8 @@ def save_img(image, bbox=None, landmarks=None, name='/content/image.jpg'):
       landmrks = np.array(landmarks).reshape(-1, 2).astype(int)
       for lnd in landmrks:
         img = cv_draw_star(img,lnd[0],lnd[1],3)
-    cv2.imwrite(name,img)  
+    filepath = os.path.join(save_path, name)
+    cv2.imwrite(filepath, img)  
 
 
 
@@ -141,7 +142,7 @@ def crop_img_bbox(image, bbox, IMG_PATH='celeba_dataset'):
   if isinstance(bbox, torch.Tensor):
     bbox = bbox.numpy()
   if isinstance(image, str): #image = filename
-    if os.path.isabs(image):
+    if os.path.isabs(image) or os.path.exists(image):
       img = Image.open(image)
     else:
       img = Image.open(os.path.join(IMG_PATH, image))
