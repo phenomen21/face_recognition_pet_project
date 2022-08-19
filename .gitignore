@@ -3,3 +3,4 @@
 *.pyc
 /processing*
 /__pycache*
+*.code-workspace
