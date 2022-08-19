@@ -8,13 +8,13 @@ import torchvision.transforms as tt
 import torchvision.transforms.functional as F
 import cv2
 import numpy as np
-import yolov5
-import yolov5.models as models
+from yolov5 import *
+# import yolov5.models as models
 from yolov5.models.common import DetectMultiBackend
 from yolov5.utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox
 from yolov5.utils.general import non_max_suppression
-from .utils.image_processing import crop_img_bbox, align_face, save_img
-
+from utilities.image_processing import crop_img_bbox, align_face, save_img
+import zipfile
 
 
 RESCALE_SIZE = 200
@@ -31,7 +31,9 @@ model_emb = torch.load(os.path.join(MODELS_DIR, 'rexnet_200_arc.pt'), map_locati
 full_embeddings = np.load(os.path.join(MODELS_DIR, 'embeddings.npy'))
 full_labels = np.load(os.path.join(MODELS_DIR, 'labels.npy'),allow_pickle=True)
 if not os.path.exists(PHOTOS_DIR):
-    os.system('unzip photos.zip -d .')
+    with zipfile.ZipFile('photos.zip', 'r') as zip_ref:
+        zip_ref.extractall('')
+
 
 
 def detect_face(image_path, model_detect):
@@ -60,7 +62,8 @@ def detect_face(image_path, model_detect):
     pred_sc[1] = pred[1] * rat_w
     pred_sc[2] = pred[2]* rat_h * 0.9
     pred_sc[3] = pred[3] * rat_w
-    save_img(image_path,bbox=pred_sc,img_path=PROC_DIR,file_name='face_detected')
+    print(image_path)
+    save_img(image_path,bbox=pred_sc,img_path='',file_name='face_detected')
     img_cropped = crop_img_bbox(image_path, pred_sc)
     return img_cropped
 

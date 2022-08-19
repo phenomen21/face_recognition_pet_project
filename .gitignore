@@ -6,3 +6,5 @@
 *.code-workspace
 /photos/
 /photos/*
+pyvenv*
+/face_recognition*
