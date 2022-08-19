@@ -2,3 +2,4 @@
 /yolov5*
 *.pyc
 /processing*
+/__pycache*
