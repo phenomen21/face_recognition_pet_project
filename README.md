@@ -1,4 +1,4 @@
-# Face recognition pet-project
+# Face recognition pet-project by Alex Zack
 
 This is a pet project in face recognition problem of Computer Vision problem family. The aim of the project was to make a pipeline of face detection, alignment and  recognition without InsightFace-trained neural networks - only neural networks pretrained on ImageNet. The project is developed using PyTorch torchvision framework.
 
@@ -26,3 +26,17 @@ A simple web-application is built using Flask-RESTful that demonstrates the face
 ![image](https://user-images.githubusercontent.com/89016122/185673445-a052346b-ea51-4402-a3c5-12375cb12ef5.png)
 
 The app also searches the celebrity whose face is most similar (by means of cosine distance between corresponding embeddings) to the person on the photo provided.
+
+To use the app you can first clone the repository with **git clone**, and next build a Docker container by this command:
+```
+docker build . -t <container_tag>
+```
+where <container_tag> is the name you would like to access this image.
+To run the container the following command is used:
+```
+docker run -p 6000:6000 <container_tag>
+```
+where <container_tag> is the name from the previous step. The application normally listens to 6000 port and it is useful to expose the same port on a local computer.
+The Celeb-finder app is then accessible in browser on the following address: **http://127.0.0.1:6000/**
+
+## Enjoy!
