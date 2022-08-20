@@ -23,11 +23,12 @@ RESCALE_SIZE = 200
 MODELS_DIR='models'
 PROC_DIR = 'static'
 PHOTOS_DIR = 'photos'
+DEVICE = torch.device('cpu')
 
 # load models
-model_yolov5 = DetectMultiBackend(os.path.join(MODELS_DIR, 'yolov5m_detect.pt'), device='cpu', dnn=False, data=os.path.join(MODELS_DIR, 'celeba.yaml'), fp16=False)
-model_landm = torch.load(os.path.join(MODELS_DIR, 'rexnet_landmarks.pt'), map_location='cpu')
-model_emb = torch.load(os.path.join(MODELS_DIR, 'rexnet_200_arc.pt'), map_location='cpu')
+model_yolov5 = DetectMultiBackend(os.path.join(MODELS_DIR, 'yolov5m_detect.pt'), device=DEVICE, dnn=False, data=os.path.join(MODELS_DIR, 'celeba.yaml'), fp16=False)
+model_landm = torch.load(os.path.join(MODELS_DIR, 'rexnet_landmarks.pt'), map_location=DEVICE)
+model_emb = torch.load(os.path.join(MODELS_DIR, 'rexnet_200_arc.pt'), map_location=DEVICE)
 
 # load embeddings and photos
 photo_list = pd.read_csv(os.path.join(MODELS_DIR, 'photo_list.csv'),index_col=0)

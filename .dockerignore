@@ -2,3 +2,12 @@
 *.md
 .git
 .cache
+.vscode
+*.pyc
+/static/*
+/__pycache*
+*.code-workspace
+/photos/
+/photos/*
+pyvenv*
+/face_recognition*
