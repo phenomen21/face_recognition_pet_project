@@ -9,3 +9,6 @@
 /photos/*
 pyvenv*
 /face_recognition*
+*.npy
+*.zip
+*.pt
