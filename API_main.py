@@ -43,7 +43,7 @@ def detect_face(image_path, model_detect):
     img0 = cv2.imread(image_path)  # BGR
   #  assert img0 is not None, f'Image Not Found {path}'
   # Padded resize
-    img = letterbox(img0, 640, stride=model_detect.stride, auto=True)[0]
+    img = letterbox(img0, 1024, stride=model_detect.stride, auto=True)[0]
   # Convert
     img = np.moveaxis(img,2,0)[...,::-1]  # HWC to CHW, BGR to RGB
   # img = np.moveaxis(img,2,0)  # HWC to CHW, BGR to RGB
