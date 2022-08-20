@@ -1,7 +1,6 @@
-torch
-torchvision
+torch --extra-index-url https://download.pytorch.org/whl/cpu
 flask
 flask-restful
 yolov5
 timm
-opencv-python
+opencv-python-headless
