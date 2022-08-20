@@ -1,0 +1,4 @@
+/training*
+*.md
+.git
+.cache
