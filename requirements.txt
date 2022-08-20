@@ -4,3 +4,4 @@ flask
 flask-restful
 yolov5
 timm
+opencv-python
