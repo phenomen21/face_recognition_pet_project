@@ -1,7 +1,7 @@
 import io
 import os
 import shutil
-from flask import Flask, make_response, request, render_template_string, render_template
+from flask import Flask, make_response, redirect, render_template_string, render_template, url_for
 from flask_restful import Resource, Api, reqparse
 import werkzeug
 import torch
@@ -20,9 +20,9 @@ import zipfile
 
 
 RESCALE_SIZE = 200
-MODELS_DIR='./models/'
-PROC_DIR = './processing/'
-PHOTOS_DIR = './photos/'
+MODELS_DIR='models'
+PROC_DIR = 'static'
+PHOTOS_DIR = 'photos'
 
 # load models
 model_yolov5 = DetectMultiBackend(os.path.join(MODELS_DIR, 'yolov5m_detect.pt'), device='cpu', dnn=False, data=os.path.join(MODELS_DIR, 'celeba.yaml'), fp16=False)
@@ -103,8 +103,8 @@ class ProcessImage(Resource):
     
     def post(self):
         for file in os.listdir(PROC_DIR):
-            print(file)
-            os.remove(os.path.join(PROC_DIR, file))
+            if file.endswith('jpg'):
+                os.remove(os.path.join(PROC_DIR, file))
         parser = reqparse.RequestParser()  # initialize
         parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files', required=True)  # add args
 
@@ -126,19 +126,36 @@ class ProcessImage(Resource):
         # stage 4 - show celebs
         celeb = find_celeb(aligned, model_emb)
 
-        with io.open('results.html', 'r', encoding="utf-8") as index:
-            page = index.read()
-        return make_response(render_template_string(page))
+        # with io.open('results.html', 'r', encoding="utf-8") as index:
+        #     page = index.read()
+        # return make_response(render_template_string(page))
+        return redirect(url_for('showresults'))
 
     def get(self):
         with io.open('index.html', 'r', encoding="utf-8") as index:
             page = index.read()
+        # page = page.format(orig_image=os.path.abspath('processing/orig_image.jpg'))
         return make_response(render_template_string(page))
+
+class ShowResults(Resource):
+    def get(self):
+        with io.open('results.html', 'r', encoding="utf-8") as index:
+            page = index.read()
+
+        import pathlib
+        # print('current dir:', pathlib.Path().resolve())
+        # orig = os.path.join(PROC_DIR, 'orig_image.jpg')
+        return make_response(render_template_string(page))
+    
+    def post(self):
+        print('redirect')
+        ProcessImage.post(self)
 
 
 app = Flask(__name__)
 api = Api(app)
 api.add_resource(ProcessImage, '/')
+api.add_resource(ShowResults, '/results')
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6000)), debug=True)

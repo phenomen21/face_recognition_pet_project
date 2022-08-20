@@ -1,2 +1,6 @@
 torch
 torchvision
+flask
+flask-restful
+yolov5
+timm

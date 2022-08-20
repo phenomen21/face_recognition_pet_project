@@ -6,7 +6,7 @@
  <body>
   <!-- HTML5 Input Form Elements -->
   <input id="fileupload" type="file" name="fileupload" /> 
-  <button id="upload-button" onclick="uploadFile()"> Try on another picture </button>
+  <button id="upload-button" onclick="uploadFile()"> Try another picture </button>
 
   <!-- Ajax JavaScript File Upload Logic -->
   <script>
@@ -17,24 +17,25 @@
     method: "POST", 
     body: formData
   }); 
-  alert('The file has been uploaded successfully.');
+  // alert('The file has been uploaded successfully.');
+  window.location.replace('/results');
   }
   </script>
 
   <p> Original image </p>
-  <p><img src="/processing/orig_image.jpg" style="max-width: 100%;" alt="Original Image"></p>
+  <p><img src="static\orig_image.jpg" style="max-width: 50%;" alt="Original Image"></p>
   <p></p>
   <p> Face detected </p>
-  <p><img src="/processing/detected.jpg" alt="Face detected"></p>
+  <p><img src="static\detected.jpg" style="max-width: 50%" alt="Face detected"></p>
   <p></p>
   <p> Landmarks placed </p>
-  <p><img src="/processing/landmarks.jpg" alt="Landmarks placed"></p>
+  <p><img src="static\landmarks.jpg" alt="Landmarks placed"></p>
   <p></p>
   <p> Face aligned </p>
-  <p><img src="/processing/face_aligned.jpg" alt="Face aligned"></p>
+  <p><img src="static\face_aligned.jpg" alt="Face aligned"></p>
   <p></p>
   <p> Celebrity found </p>
-  <p><img src="/processing/celeb.jpg" style="max-width: 100%;" alt="Celebrity found"></p>
+  <p><img src="static\celeb.jpg" style="max-width: 50%;" alt="Celebrity found"></p>
   <p></p>
 
 
