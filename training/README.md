@@ -31,18 +31,23 @@ ImageNet pretrained YOLOv5m from https://github.com/ultralytics/yolov5 was trans
 ImageNet pretrained Rexnet_200 from PyTorch Image Models repository (timm - https://github.com/rwightman/pytorch-image-models) was transfer trained on cleaned CelebA dataset with landmarks. Albumentation libaray (https://albumentations.ai/) was used to regularize training process by augmenting images. Pictures from the training dataset looked like this:
 ![image](https://user-images.githubusercontent.com/89016122/185302633-68f3a982-0e9f-4581-a7c3-8096ec65836b.png)
 
-- learning rates were set to 1e-4 for the feature extractor and 1e-3 for the head of the model;
-- 3 epochs were completed;
+- initial learning rates were set to 1e-4 for the feature extractor and 1e-3 for the head of the model;
+- learning rate scheduler ReduceOnPlateau was used;
+- 26 epochs were completed;
 - each training epoch took approximately 45min to complete;
-- validation step took 5min;
+- each validation step took 5min;
 
 |epoch |  train_loss  |  val_loss|
 |---|---|---|
-|  1   |    235.64  |       46.72 |
-|  2   |     63.94  |       42.19 |
-|  3   |     52.59  |       43.49 |
+|  1   |    244.61  |       52.75 |
+|  2   |     68.35  |       46.02 |
+|  5   |     42.10  |       33.00 |
+| 10   |     32.33  |       23.94 |
+| 15   |     24.49  |       16.13 |
+| 20   |     22.56  |       13.11 |
+| 25   |     22.36  |       11.81 |
+| 26   |     22.15  |       11.57 |
 
-_#TODO: increase the quality of landmarks placing; try different neural networks, use better augmentation_
 
 ---------------------------------------
 
