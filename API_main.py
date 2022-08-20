@@ -102,6 +102,8 @@ def find_celeb(image, model_emb):
 class ProcessImage(Resource):
     
     def post(self):
+        if not os.path.exists(PROC_DIR):
+            os.mkdir(PROC_DIR)
         for file in os.listdir(PROC_DIR):
             if file.endswith('jpg'):
                 os.remove(os.path.join(PROC_DIR, file))
