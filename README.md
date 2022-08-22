@@ -1,4 +1,4 @@
-# Face recognition pet-project by Alex Zack
+# Face recognition pet-project
 
 This is a pet project in face recognition problem of Computer Vision problem family. The aim of the project was to make a pipeline of face detection, alignment and  recognition without InsightFace-trained neural networks - only neural networks pretrained on ImageNet. The project is developed using PyTorch torchvision framework.
 
