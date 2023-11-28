@@ -27,7 +27,7 @@ A simple web-application is built using Flask-RESTful that demonstrates the face
 
 The app also searches the celebrity whose face is most similar (by means of cosine distance between corresponding embeddings) to the person on the photo provided.
 
-To use the app you can first clone the repository with **git clone**, and next build a Docker container by this command:
+To use the app you can first clone the repository with **git clone**, and next build a Docker container by this command (inside newly created folder):
 ```
 docker build . -t <container_tag>
 ```
